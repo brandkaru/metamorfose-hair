@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GALLERY_ITEMS, SALON_CONFIG } from '../config/salon';
 import type { GalleryItem } from '../config/salon';
 import { Sparkles, MessageCircle, ExternalLink, X, ArrowUpRight } from 'lucide-react';
@@ -12,10 +12,16 @@ export const Gallery: React.FC<GalleryProps> = ({ onOpenSchedule }) => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'trancas' | 'cortes' | 'tratamentos'>('all');
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
 
+  const [visibleCount, setVisibleCount] = useState(24);
+
   const filteredItems = useMemo(() => {
     if (activeCategory === 'all') return GALLERY_ITEMS;
     return GALLERY_ITEMS.filter((item) => item.category === activeCategory);
   }, [activeCategory]);
+
+  const displayedItems = useMemo(() => {
+    return filteredItems.slice(0, visibleCount);
+  }, [filteredItems, visibleCount]);
 
   const handleBookItem = (item: GalleryItem) => {
     onOpenSchedule(item.title, item.stylist);
@@ -38,14 +44,14 @@ export const Gallery: React.FC<GalleryProps> = ({ onOpenSchedule }) => {
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-amber-400" />
               <span className="text-xs uppercase tracking-[0.2em] text-amber-400 font-semibold font-mono">
-                Portfólio & Transformações
+                Portfólio & Transformações • {GALLERY_ITEMS.length} Obras
               </span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-bold font-['Syne'] text-white uppercase tracking-tight">
               Galeria de Criações
             </h2>
             <p className="mt-3 text-sm sm:text-base text-neutral-400 max-w-xl font-normal">
-              Trabalhos 100% originais produzidos no estúdio. Clique em qualquer foto para ver os detalhes ou agendar o mesmo visual.
+              Trabalhos 100% originais produzidos no estúdio pelas nossas especialistas. Clique em qualquer foto para ver os detalhes ou agendar o mesmo visual.
             </p>
           </div>
 
@@ -59,7 +65,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onOpenSchedule }) => {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveCategory(tab.id as any)}
+                onClick={() => {
+                  setActiveCategory(tab.id as any);
+                  setVisibleCount(24);
+                }}
                 className={`cursor-pointer px-4 py-2 rounded-full text-xs font-semibold tracking-wider uppercase transition-all duration-300 ${
                   activeCategory === tab.id
                     ? 'bg-amber-400 text-black font-bold shadow-lg shadow-amber-400/20'
@@ -74,7 +83,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onOpenSchedule }) => {
 
         {/* Clean Instagram-style Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {filteredItems.map((item) => (
+          {displayedItems.map((item) => (
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)}
@@ -111,6 +120,18 @@ export const Gallery: React.FC<GalleryProps> = ({ onOpenSchedule }) => {
             </div>
           ))}
         </div>
+
+        {/* Load More Button if remaining */}
+        {visibleCount < filteredItems.length && (
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => setVisibleCount((prev) => prev + 24)}
+              className="cursor-pointer px-8 py-3.5 rounded-full bg-neutral-900 hover:bg-amber-400 text-white hover:text-black border border-neutral-700 hover:border-amber-400 font-bold uppercase text-xs tracking-wider transition-all duration-300 shadow-xl"
+            >
+              Carregar Mais Trabalhos (+{filteredItems.length - visibleCount})
+            </button>
+          </div>
+        )}
 
         {/* Instagram Profile CTA Banner */}
         <div className="mt-14 p-6 sm:p-8 rounded-3xl bg-neutral-950 border border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
@@ -156,7 +177,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onOpenSchedule }) => {
             {/* Modal Image */}
             <div className="w-full md:w-1/2 aspect-square relative bg-neutral-900">
               <img
-                src={selectedItem.image}
+                src={selectedItem.fullImage || selectedItem.image}
                 alt={selectedItem.title}
                 className="w-full h-full object-cover"
               />
